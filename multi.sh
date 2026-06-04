@@ -104,12 +104,22 @@ ip link set eth0 up
 ifconfig eth0 10.0.2.15 netmask 255.255.255.0
 route add default gw 10.0.2.2
 
+# Injeksi DNS QEMU Internal
+echo "nameserver 10.0.2.3" > /etc/resolv.conf
+
 # Set Kata Sandi Secara Native (Bypass ketidakcocokan Host-Guest)
 echo "root:root123" | chpasswd
 echo "henn:henn123" | chpasswd
 echo "hann:hann123" | chpasswd
 echo "viii:viii123" | chpasswd
 echo "kids:kids123" | chpasswd
+
+# Koreksi Hak Akses (Dieksekusi oleh Guest OS)
+chown -R 1001:1001 /home/henn
+chown -R 1002:1002 /home/hann
+chown -R 1003:1003 /home/viii
+chown -R 1004:1004 /home/kids
+chmod 750 /home/*
 
 # Sistem Respawn
 while true; do
@@ -176,7 +186,14 @@ cat /mnt/fuse/hello
 EOF
 chmod +x root/fuse_test.sh
 
+# ... (kode init dan fuse_test.sh di atasnya) ...
+cat << 'EOF' > root/.profile
+echo "[*] Menginisialisasi Lingkungan Root..."
+echo "[*] Struktur Root Filesystem (OS):"
+ls -la /
+EOF
+
+# PINTU SEGEL KOMPRESI (Harus selalu berada paling bawah)
 find . | cpio -H newc -o | gzip -9 > ../osboot/multi.gz
 cd ..
 echo "[+] Multi filesystem dibuat di osboot/multi.gz"
-
